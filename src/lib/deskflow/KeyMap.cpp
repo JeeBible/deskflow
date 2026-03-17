@@ -600,6 +600,9 @@ const KeyMap::KeyItem *KeyMap::mapCharacterKey(
   KeyModifierMask newState = currentState;
   int32_t newGroup = group;
 
+  // don't try to change CapsLock (mirrors mapCommandKey behavior)
+  desiredMask = (desiredMask & ~KeyModifierCapsLock) | (currentState & KeyModifierCapsLock);
+
   // add each key
   for (auto &item : *itemList) {
     if (!keysForKeyItem(item, newGroup, newModifiers, newState, desiredMask, 0, isAutoRepeat, keys, lang)) {
@@ -725,10 +728,15 @@ bool KeyMap::keysForKeyItem(
     // (in order to satisfy a shift modifier) then press a different
     // button (any other button) mapped to the shift modifier and then
     // the Shift_L button.
-    // match key's required state
+    // match key's required state.
+    // CapsLock is treated as not required: each PC manages its own CapsLock state
+    // independently. Attempting to toggle CapsLock on the secondary to match the
+    // primary disrupts IME composition (e.g., Korean syllable formation breaks
+    // when CapsLock toggle events interrupt the IME state machine).
     LOG_DEBUG1("state: %04x,%04x,%04x", currentState, keyItem.m_required, sensitive);
     if (!keysForModifierState(
-            keyItem.m_button, group, activeModifiers, currentState, keyItem.m_required, sensitive, 0, keystrokes
+            keyItem.m_button, group, activeModifiers, currentState, keyItem.m_required, sensitive,
+            KeyModifierCapsLock, keystrokes
         )) {
       LOG(
           (CLOG_DEBUG1 "unable to match modifier state (%04x,%04x) for key %d", keyItem.m_required, keyItem.m_sensitive,
