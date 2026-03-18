@@ -54,13 +54,8 @@ if(BUILD_OSX_BUNDLE)
     configure_mac_codesign(${target})
   endif()
 elseif (WIN32)
-  # Request uiAccess=true so the process can interact with the Secure Desktop
-  # (UAC prompts, Windows login screen). Without this, WH_MOUSE_LL hooks and
-  # SendInput fail when the Secure Desktop is active.
-  # The linker auto-generates a UAC manifest fragment; /MANIFESTUAC must match
-  # the uiAccess value in deskflow-core.exe.manifest to avoid merge conflicts.
   set_target_properties(${target} PROPERTIES
-    LINK_FLAGS "/MANIFESTUAC:\"level='asInvoker' uiAccess='true'\""
+    LINK_FLAGS "/MANIFESTUAC:\"level='asInvoker' uiAccess='false'\""
   )
   install(RUNTIME_DEPENDENCY_SET coreDeps
     PRE_EXCLUDE_REGEXES ${WIN32_PRE_EXCLUDE_REGEXES}
