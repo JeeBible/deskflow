@@ -55,7 +55,7 @@ if(BUILD_OSX_BUNDLE)
   endif()
 elseif (WIN32)
   set_target_properties(${target} PROPERTIES
-    LINK_FLAGS "/MANIFESTUAC:\"level='asInvoker' uiAccess='true'\""
+    LINK_FLAGS "/MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
   )
   install(RUNTIME_DEPENDENCY_SET coreDeps
     PRE_EXCLUDE_REGEXES ${WIN32_PRE_EXCLUDE_REGEXES}

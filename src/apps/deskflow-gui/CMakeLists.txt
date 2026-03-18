@@ -57,7 +57,10 @@ install(
 )
 
 if(WIN32)
-  set_target_properties(${target} PROPERTIES LINK_FLAGS "/NODEFAULTLIB:LIBCMT")
+  target_sources(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/deskflow.exe.manifest)
+  set_target_properties(${target} PROPERTIES
+    LINK_FLAGS "/NODEFAULTLIB:LIBCMT /MANIFESTUAC:\"level='requireAdministrator' uiAccess='false'\""
+  )
 
   install(RUNTIME_DEPENDENCY_SET guiDeps
     PRE_EXCLUDE_REGEXES ${WIN32_PRE_EXCLUDE_REGEXES}
