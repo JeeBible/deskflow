@@ -128,9 +128,6 @@ protected:
   void updateButtons() override;
   IKeyState *getKeyState() const override;
 
-  // IPlatformScreen override: sync toggle keys (CapsLock, NumLock, ScrollLock, Hangul) at screen entry
-  void syncToggleKeys(KeyModifierMask targetMask) override;
-
   // simulate a local key to the system directly
   void fakeLocalKey(KeyButton button, bool press) const;
 

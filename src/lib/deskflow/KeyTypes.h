@@ -63,7 +63,6 @@ static const KeyModifierMask KeyModifierMeta = 0x0008;
 static const KeyModifierMask KeyModifierSuper = 0x0010;
 static const KeyModifierMask KeyModifierAltGr = 0x0020;
 static const KeyModifierMask KeyModifierLevel5Lock = 0x0040;
-static const KeyModifierMask KeyModifierHangul = 0x0080;  // Korean IME mode (0=English, 1=Korean)
 static const KeyModifierMask KeyModifierCapsLock = 0x1000;
 static const KeyModifierMask KeyModifierNumLock = 0x2000;
 static const KeyModifierMask KeyModifierScrollLock = 0x4000;

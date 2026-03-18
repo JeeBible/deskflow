@@ -13,7 +13,6 @@
 #include "arch/win32/XArchWindows.h"
 #include "base/IEventQueue.h"
 #include "base/Log.h"
-#include "base/Stopwatch.h"
 #include "base/TMethodJob.h"
 #include "client/Client.h"
 #include "common/Constants.h"
@@ -910,21 +909,9 @@ bool MSWindowsScreen::onPreDispatchPrimary(HWND, UINT message, WPARAM wParam, LP
     // post warp event and can be sure we've skipped the warp
     // event.
     MSG msg;
-    Stopwatch timer(true);
-    static constexpr double s_postWarpTimeoutSec = 0.2;
-    for (;;) {
-      if (PeekMessage(&msg, nullptr, DESKFLOW_MSG_MOUSE_MOVE, DESKFLOW_MSG_POST_WARP, PM_REMOVE)) {
-        if (msg.message == DESKFLOW_MSG_POST_WARP) {
-          break;
-        }
-      } else {
-        if (timer.getTime() >= s_postWarpTimeoutSec) {
-          LOG_WARN("timed out waiting for post-warp marker");
-          break;
-        }
-        Arch::sleep(0.0);
-      }
-    }
+    do {
+      GetMessage(&msg, nullptr, DESKFLOW_MSG_MOUSE_MOVE, DESKFLOW_MSG_POST_WARP);
+    } while (msg.message != DESKFLOW_MSG_POST_WARP);
   }
     return true;
 
@@ -1367,9 +1354,7 @@ void MSWindowsScreen::onClipboardChange()
 void MSWindowsScreen::warpCursorNoFlush(int32_t x, int32_t y)
 {
   // send an event that we can recognize before the mouse warp
-  if (PostThreadMessage(GetCurrentThreadId(), DESKFLOW_MSG_PRE_WARP, x, y) == 0) {
-    LOG_WARN("failed to post pre-warp marker (error=%lu)", GetLastError());
-  }
+  PostThreadMessage(GetCurrentThreadId(), DESKFLOW_MSG_PRE_WARP, x, y);
 
   // warp mouse.  hopefully this inserts a mouse motion event
   // between the previous message and the following message.
@@ -1416,9 +1401,7 @@ void MSWindowsScreen::warpCursorNoFlush(int32_t x, int32_t y)
   Arch::sleep(0.0);
 
   // send an event that we can recognize after the mouse warp
-  if (PostThreadMessage(GetCurrentThreadId(), DESKFLOW_MSG_POST_WARP, 0, 0) == 0) {
-    LOG_WARN("failed to post post-warp marker (error=%lu)", GetLastError());
-  }
+  PostThreadMessage(GetCurrentThreadId(), DESKFLOW_MSG_POST_WARP, 0, 0);
 }
 
 void MSWindowsScreen::nextMark()
@@ -1427,9 +1410,7 @@ void MSWindowsScreen::nextMark()
   ++m_mark;
 
   // mark point in message queue where the mark was changed
-  if (PostThreadMessage(GetCurrentThreadId(), DESKFLOW_MSG_MARK, m_mark, 0) == 0) {
-    LOG_WARN("failed to post mark message (error=%lu)", GetLastError());
-  }
+  PostThreadMessage(GetCurrentThreadId(), DESKFLOW_MSG_MARK, m_mark, 0);
 }
 
 bool MSWindowsScreen::ignore() const
@@ -1692,40 +1673,6 @@ LRESULT CALLBACK MSWindowsScreen::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LP
   }
 
   return result;
-}
-
-void MSWindowsScreen::syncToggleKeys(KeyModifierMask targetMask)
-{
-  // Read Secondary's current toggle state and compare with Primary's (targetMask).
-  // For each lock key or IME mode that differs, send a press+release to toggle it.
-  KeyModifierMask currentMask = m_keyState->pollActiveModifiers();
-  KeyModifierMask diff = targetMask ^ currentMask;
-
-  struct ToggleKey
-  {
-    UINT vk;
-    KeyModifierMask bit;
-  };
-  static const ToggleKey k_toggleKeys[] = {
-      {VK_CAPITAL, KeyModifierCapsLock},
-      {VK_NUMLOCK, KeyModifierNumLock},
-      {VK_SCROLL, KeyModifierScrollLock},
-      {VK_HANGUL, KeyModifierHangul},
-  };
-
-  for (const auto &k : k_toggleKeys) {
-    if (diff & k.bit) {
-      INPUT inputs[2] = {};
-      inputs[0].type = INPUT_KEYBOARD;
-      inputs[0].ki.wVk = k.vk;
-      inputs[0].ki.dwFlags = 0; // key down
-      inputs[1].type = INPUT_KEYBOARD;
-      inputs[1].ki.wVk = k.vk;
-      inputs[1].ki.dwFlags = KEYEVENTF_KEYUP; // key up
-      SendInput(2, inputs, sizeof(INPUT));
-      LOG_DEBUG1("syncToggleKeys: toggled vk=0x%02x (bit 0x%04x)", k.vk, k.bit);
-    }
-  }
 }
 
 void MSWindowsScreen::fakeLocalKey(KeyButton button, bool press) const

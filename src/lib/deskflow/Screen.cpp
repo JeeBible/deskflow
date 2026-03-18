@@ -413,11 +413,9 @@ void Screen::enterPrimary() const
   // do nothing
 }
 
-void Screen::enterSecondary(KeyModifierMask toggleMask) const
+void Screen::enterSecondary(KeyModifierMask) const
 {
-  // Sync toggle key states (CapsLock, NumLock, ScrollLock) and Korean IME mode
-  // so that Secondary matches Primary at the moment the mouse enters this screen.
-  m_screen->syncToggleKeys(toggleMask);
+  // do nothing
 }
 
 void Screen::leavePrimary()
