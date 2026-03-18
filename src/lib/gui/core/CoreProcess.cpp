@@ -163,16 +163,27 @@ void CoreProcess::onProcessFinished(int exitCode, QProcess::ExitStatus)
     m_retryTimer.stop();
   }
 
-  if (exitCode != s_exitSuccess) {
+  // Permanent failures: do not retry.
+  // s_exitDuplicate: another instance is already running.
+  // s_exitArgs / s_exitConfig: misconfiguration, retrying won't help.
+  const bool permanentFailure =
+      (exitCode == s_exitDuplicate || exitCode == s_exitArgs || exitCode == s_exitConfig);
+
+  if (permanentFailure) {
     setProcessState(Stopped);
     if (exitCode == s_exitDuplicate)
       qWarning("desktop process is already running");
     else
-      qWarning("desktop process exited with code: %d", exitCode);
+      qWarning("desktop process exited with code: %d (permanent, not retrying)", exitCode);
     return;
   }
 
-  qDebug("desktop process exited normally");
+  // s_exitFailed (e.g. network drop / TCP reset) or s_exitSuccess: retry if
+  // the process was actively running so the connection is restored automatically.
+  if (exitCode != s_exitSuccess)
+    qWarning("desktop process exited with code: %d (will retry)", exitCode);
+  else
+    qDebug("desktop process exited normally");
 
   if (const auto wasStarted = m_processState == Started; wasStarted) {
     qDebug("desktop process was running, retrying in %d ms", kRetryDelay);
