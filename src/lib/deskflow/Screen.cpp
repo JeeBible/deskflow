@@ -413,9 +413,10 @@ void Screen::enterPrimary() const
   // do nothing
 }
 
-void Screen::enterSecondary(KeyModifierMask) const
+void Screen::enterSecondary(KeyModifierMask toggleMask) const
 {
-  // do nothing
+  // Sync CapsLock/NumLock/ScrollLock to match Primary at transition time.
+  m_screen->syncToggleKeys(toggleMask);
 }
 
 void Screen::leavePrimary()

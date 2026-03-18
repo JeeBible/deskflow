@@ -55,6 +55,18 @@ public:
   */
   virtual void enter() = 0;
 
+  //! Sync physical lock key states to match primary screen
+  /*!
+  Called when the user navigates to this (secondary) screen.
+  \p targetMask is the primary's current toggle state (CapsLock, NumLock,
+  ScrollLock). Implementations compare against their own state and fire
+  the necessary key events to sync. Hangul/IME mode is intentionally
+  excluded because 한/영 key presses are already forwarded naturally and
+  explicit sync here would cause double-toggle bugs.
+  Default implementation does nothing (non-Windows platforms).
+  */
+  virtual void syncToggleKeys(KeyModifierMask /*targetMask*/) {}
+
   //! Leave screen
   /*!
   Called when the user navigates off the screen.  Returns true if

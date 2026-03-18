@@ -1675,6 +1675,42 @@ LRESULT CALLBACK MSWindowsScreen::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LP
   return result;
 }
 
+void MSWindowsScreen::syncToggleKeys(KeyModifierMask targetMask)
+{
+  // Sync physical lock keys (CapsLock, NumLock, ScrollLock) so Secondary
+  // matches Primary at the moment the mouse enters this screen.
+  // Hangul/IME mode is intentionally excluded: 한/영 key presses are already
+  // forwarded naturally via fakeKeyDown and explicit sync here causes
+  // double-toggle (user presses 한/영 → mode flips, then sync flips it back).
+  KeyModifierMask currentMask = m_keyState->pollActiveModifiers();
+  KeyModifierMask diff = targetMask ^ currentMask;
+
+  struct ToggleKey
+  {
+    UINT vk;
+    KeyModifierMask bit;
+  };
+  static const ToggleKey k_lockKeys[] = {
+      {VK_CAPITAL, KeyModifierCapsLock},
+      {VK_NUMLOCK, KeyModifierNumLock},
+      {VK_SCROLL, KeyModifierScrollLock},
+  };
+
+  for (const auto &k : k_lockKeys) {
+    if (diff & k.bit) {
+      INPUT inputs[2] = {};
+      inputs[0].type = INPUT_KEYBOARD;
+      inputs[0].ki.wVk = k.vk;
+      inputs[0].ki.dwFlags = 0;
+      inputs[1].type = INPUT_KEYBOARD;
+      inputs[1].ki.wVk = k.vk;
+      inputs[1].ki.dwFlags = KEYEVENTF_KEYUP;
+      SendInput(2, inputs, sizeof(INPUT));
+      LOG_DEBUG1("syncToggleKeys: toggled vk=0x%02x (bit 0x%04x)", k.vk, k.bit);
+    }
+  }
+}
+
 void MSWindowsScreen::fakeLocalKey(KeyButton button, bool press) const
 {
   INPUT input;
