@@ -983,10 +983,13 @@ int32_t KeyState::getEffectiveGroup(int32_t group, int32_t offset) const
 bool KeyState::isIgnoredKey(KeyID key, KeyModifierMask) const
 {
   switch (key) {
-  case kKeyCapsLock:
   case kKeyNumLock:
   case kKeyScrollLock:
     return true;
+  // kKeyCapsLock is intentionally NOT ignored: explicit CapsLock key presses
+  // from Primary must be forwarded to Secondary so the user can toggle it.
+  // Implicit CapsLock toggling during character synthesis is prevented via
+  // notRequiredMask in keysForModifierState / s_notRequiredMask.
 
   default:
     return false;

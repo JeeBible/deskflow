@@ -696,7 +696,11 @@ bool KeyMap::keysForKeyItem(
     const std::string &lang
 ) const
 {
-  static const KeyModifierMask s_notRequiredMask = KeyModifierAltGr | KeyModifierNumLock | KeyModifierScrollLock;
+  // CapsLock is included so keysToRestoreModifiers never generates a second
+  // CapsLock toggle that would undo a deliberate CapsLock key press forwarded
+  // from Primary. Each PC manages its own CapsLock state independently.
+  static const KeyModifierMask s_notRequiredMask =
+      KeyModifierAltGr | KeyModifierNumLock | KeyModifierScrollLock | KeyModifierCapsLock;
 
   // add keystrokes to adjust the group
   if (group != keyItem.m_group) {
