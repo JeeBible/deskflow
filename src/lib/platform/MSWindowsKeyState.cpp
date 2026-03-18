@@ -810,6 +810,10 @@ KeyModifierMask MSWindowsKeyState::pollActiveModifiers() const
   if ((GetKeyState(VK_SCROLL) & 0x01) != 0) {
     state |= KeyModifierScrollLock;
   }
+  // Korean IME mode: VK_HANGUL toggle bit (1 = Korean, 0 = English)
+  if ((GetKeyState(VK_HANGUL) & 0x01) != 0) {
+    state |= KeyModifierHangul;
+  }
 
   return state;
 }
